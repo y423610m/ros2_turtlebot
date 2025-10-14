@@ -1,0 +1,17 @@
+# version: '3.9'
+
+services:
+  ros2_nav2:
+    build: .
+    container_name: ros2_nav2
+    network_mode: "host"
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - XAUTHORITY=/root/.Xauthority
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - $XAUTHORITY:/root/.Xauthority
+      - ./workspace:/workspace:rw
+    stdin_open: true
+    tty: true
