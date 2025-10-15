@@ -10,6 +10,7 @@ docker exec -it $(docker ps | sed -n '2p' | awk '{print $1}') bash
 
 export TURTLEBOT3_MODEL=waffle
 export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/opt/ros/$ROS_DISTRO/share/turtlebot3_gazebo/models
+export TURTLEBOT3_MODEL_PATH=/opt/ros/$ROS_DISTRO/share/turtlebot3_gazebo/models
 
 ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py  # This takes a few minutes
 

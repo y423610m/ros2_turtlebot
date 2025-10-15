@@ -34,7 +34,7 @@ def generate_launch_description():
         actions=[
             Node(
                 package='my_turtlebot_spawner',
-                executable='spawn_waffle',
+                executable='spawn_waffle.py',
                 output='screen'
             )
         ]
