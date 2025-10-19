@@ -2,6 +2,7 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.actions import TimerAction
+import os
 
 def generate_launch_description():
     # Gazebo server（libgazebo_ros_factory.so で ROS2 サービス有効化）
@@ -50,10 +51,23 @@ def generate_launch_description():
     #         )
     #     ]
     # )
+    robot_state_publisher_node = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        output='screen',
+        parameters=[{
+            # Load the proper URDF based on TURTLEBOT3_MODEL
+            'robot_description': open(
+                f'/opt/ros/humble/share/turtlebot3_gazebo/urdf/turtlebot3_{os.environ["TURTLEBOT3_MODEL"]}.urdf'
+            ).read()
+        }]
+    )
 
     return LaunchDescription([
         gazebo_server,
         gazebo_gui,
         spawn_python,
+        robot_state_publisher_node,
         # spawn_cpp
     ])

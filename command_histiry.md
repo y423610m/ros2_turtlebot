@@ -24,6 +24,7 @@ ros2 launch nav2_bringup tb3_simulation_launch.py headless:=False
 <!-- ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py -->
 
 ros2 launch my_turtlebot_spawner spawn_waffle.launch.py
+ros2 run my_nav_pkg straight_avoid.py
 
 # control from kbd
 ros2 run turtlebot3_teleop teleop_keyboard

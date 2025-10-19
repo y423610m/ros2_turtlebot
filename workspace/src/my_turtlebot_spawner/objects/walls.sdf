@@ -1,0 +1,95 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="walls">
+    <static>true</static>
+
+    <!-- North wall -->
+    <link name="north_wall">
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>10 0.1 0.5</size> <!-- width x thickness x height -->
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>10 0.1 0.5</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.8 0.8 0.8 1</ambient>
+        </material>
+      </visual>
+      <pose>0 5 0 0 0 0</pose>
+    </link>
+
+    <!-- South wall -->
+    <link name="south_wall">
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>10 0.1 0.5</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>10 0.1 0.5</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.8 0.8 0.8 1</ambient>
+        </material>
+      </visual>
+      <pose>0 -5 0 0 0 0</pose>
+    </link>
+
+    <!-- East wall -->
+    <link name="east_wall">
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.1 10 0.5</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.1 10 0.5</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.8 0.8 0.8 1</ambient>
+        </material>
+      </visual>
+      <pose>5 0 0 0 0 0</pose>
+    </link>
+
+    <!-- West wall -->
+    <link name="west_wall">
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.1 10 0.5</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.1 10 0.5</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.8 0.8 0.8 1</ambient>
+        </material>
+      </visual>
+      <pose>-5 0 0 0 0 0</pose>
+    </link>
+
+  </model>
+</sdf>

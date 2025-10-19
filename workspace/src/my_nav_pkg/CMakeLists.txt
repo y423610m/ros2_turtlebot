@@ -21,6 +21,11 @@ install(PROGRAMS
   ${PROJECT_NAME}/my_nav_node.py
   DESTINATION lib/${PROJECT_NAME})
 
+install(PROGRAMS
+  ${PROJECT_NAME}/straight_avoid.py
+  DESTINATION lib/${PROJECT_NAME})
+
+
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}/)
 
