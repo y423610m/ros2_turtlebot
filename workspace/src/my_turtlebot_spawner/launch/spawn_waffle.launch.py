@@ -20,7 +20,8 @@ def generate_launch_description():
     #     output='screen'
     # )
     gazebo_server = ExecuteProcess(
-        cmd=['gzserver', '--verbose', '-s', 'libgazebo_ros_factory.so', '/usr/share/gazebo-11/worlds/empty.world'],
+        cmd=['gzserver', '--verbose', '-s', 'libgazebo_ros_factory.so', '/workspace/src/my_turtlebot_spawner/worlds/4walls.world'],
+        # cmd=['gzserver', '--verbose', '-s', 'libgazebo_ros_factory.so', '/usr/share/gazebo-11/worlds/empty.world'],
         output='screen'
     )
 
