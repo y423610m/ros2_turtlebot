@@ -14,8 +14,9 @@ RUN apt update && apt install -y \
     ros-humble-turtlebot3-gazebo \
     ros-humble-turtlebot3-teleop \
     ros-humble-gazebo-ros \
-    ros-humble-gazebo-ros-pkgs && \
-    rm -rf /var/lib/apt/lists/*
+    ros-humble-gazebo-ros-pkgs \
+    ros-humble-tf-transformations \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc
 RUN echo "export TURTLEBOT3_MODEL=waffle" >> /root/.bashrc

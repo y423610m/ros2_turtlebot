@@ -17,8 +17,8 @@ class WaffleSpawner(Node):
 
         self._spawn_robot()
         # self._spawn_4walls()
-        self._spawn_obs_walls()
-        self._spawn_obs_cylinder()
+        # self._spawn_obs_walls()
+        # self._spawn_obs_cylinder()
         # self._spawn_obs_box()
 
     def _spawn_robot(self):
