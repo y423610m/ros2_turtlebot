@@ -5,6 +5,7 @@ from rclpy.node import Node
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from builtin_interfaces.msg import Time
+from my_nav_interfaces.srv import PlanPath, FollowPath
 
 class Planner(Node):
     def __init__(self):

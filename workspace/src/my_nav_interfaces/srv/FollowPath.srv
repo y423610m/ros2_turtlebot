@@ -1,0 +1,6 @@
+nav_msgs/Path path
+float32 max_speed   # optional: maximum linear speed
+float32 tolerance   # optional: distance tolerance
+---
+bool success
+string message
