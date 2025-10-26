@@ -23,6 +23,7 @@ install(PROGRAMS
 
 install(PROGRAMS
   ${PROJECT_NAME}/straight_avoid.py
+  ${PROJECT_NAME}/bt_navigator.py
   ${PROJECT_NAME}/planner.py
   ${PROJECT_NAME}/controller.py
   DESTINATION lib/${PROJECT_NAME})

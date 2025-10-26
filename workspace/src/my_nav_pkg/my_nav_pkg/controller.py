@@ -7,8 +7,13 @@ from geometry_msgs.msg import Pose, PoseStamped, Twist
 from builtin_interfaces.msg import Time
 from tf2_ros import Buffer, TransformListener
 from tf_transformations import euler_from_quaternion
+from my_nav_interfaces.srv import FollowPath
+from rclpy.executors import MultiThreadedExecutor
 
 import math
+import time
+
+from threading import Thread
 
 class Controller(Node):
     x = None
@@ -16,16 +21,15 @@ class Controller(Node):
     rz = None
 
     path = None
-    next_index = 0
+    next_path_index = 0
 
     def __init__(self):
         super().__init__("planner")
 
-        self.scan_sub = self.create_subscription(
-            Path,
-            '/path',
-            self.path_callback,
-            10
+        self.follow_sub = self.create_service(
+            FollowPath,
+            'follow_path',  # service name (navigator calls this)
+            self.handle_follow_path
         )
 
         self.cmd_pub = self.create_publisher(
@@ -36,57 +40,93 @@ class Controller(Node):
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
-        self.timer = self.create_timer(0.5, self.spin_once)
-        # self.timer = self.create_timer(0.5, self.get_pose)
+        self.timer = self.create_timer(0.01, self.spin_once)
+        # self.timer = self.create_timer(0.5, self.update_pose)
 
-
-    def path_callback(self, path:Path):
-        self.path = path
-
-    def get_pose(self):
-        try:
-            # map→base_linkの変換を取得
-            trans = self.tf_buffer.lookup_transform('odom', 'base_footprint', rclpy.time.Time())
-            self.x = trans.transform.translation.x
-            self.y = trans.transform.translation.y
-            q = trans.transform.rotation
-            (_, _, self.rz) = euler_from_quaternion([q.x, q.y, q.z, q.w])
-
-            self.get_logger().info(f"x={self.x:.2f}, y={self.y:.2f}, yaw={self.rz:.2f} rad")
-        except Exception as e:
-            self.get_logger().warn(str(e))
+        self.command_queue = []
+        self.prev_path_index = -1
+        self.next_path_index = -1
 
     def spin_once(self):
-        self.get_pose()
+        self.update_pose()
+
+        self.move_once()
 
         if self.x is None:
             return
         if self.path is None:
             return
 
+    def handle_follow_path(self, request, response):
+        self.command_queue.append((request, response))
+        self.get_logger().info(f"follow path {request=}")
+        return response
 
-        # find next waypoint
-        if len(self.path.poses) == 0:
+    def move_once(self):
+        if len(self.command_queue) == 0:
             return
+        request, response = self.command_queue[0]
+
+        self.path = request.path
+        # self.next_path_index = 0
+
+        while self.x is None:
+            time.sleep(0.1)
+
         close_threshold = 0.1
         best_distance = 1e9
-        best_index = None
-        for path_index in range(len(self.path.poses)-1, -1, -1):
-            pose = self.path.poses[path_index].pose
-            distance = ( (pose.position.x-self.x)**2 + (pose.position.y-self.y)**2 ) ** 0.5
-            if distance < close_threshold:
-                best_index = min(path_index+1, len(self.path.poses)-1)
-                break
-            if best_distance > distance:
-                best_distance = distance
-                best_index = path_index
+        best_index = self.next_path_index
+        path_index = best_index
+        pose = self.path.poses[path_index].pose
+        distance = ( (pose.position.x-self.x)**2 + (pose.position.y-self.y)**2 ) ** 0.5
+        if distance < close_threshold:
+            best_index = min(path_index+1, len(self.path.poses)-1)
+
+        # for path_index in range(len(self.path.poses)-1, -1, -1):
+        #     pose = self.path.poses[path_index].pose
+        #     distance = ( (pose.position.x-self.x)**2 + (pose.position.y-self.y)**2 ) ** 0.5
+        #     if distance < close_threshold:
+        #         best_index = min(path_index+1, len(self.path.poses)-1)
+        #         break
+        #     if best_distance > distance:
+        #         best_distance = distance
+        #         best_index = path_index
 
         if best_index is None:
+            response.message = '1'
+            self.get_logger().info(f"follow path end {response.message=}")
             return
-        self.next_index = max(self.next_index, best_index)
+        self.next_path_index = max(self.next_path_index, best_index)
 
-        self.get_logger().info(f"{self.next_index=} {len(self.path.poses)=}")
-        self.move(self.path.poses[self.next_index].pose)
+        if self.prev_path_index != self.next_path_index:
+            self.get_logger().info(f"Moving to path index {self.next_path_index}")
+            self.prev_path_index = self.next_path_index
+
+        self.get_logger().info(f"{self.next_path_index=} {len(self.path.poses)=}")
+        is_reached = self.move(self.path.poses[self.next_path_index].pose)
+        if is_reached and self.next_path_index +1  >= len(self.path.poses):
+            # response.goal = PoseStamped()
+            response.message = 'reach'
+            self.get_logger().info(f"follow path end {response.message=}")
+
+            self.command_queue.pop(0)
+            self.path = None
+            self.next_path_index = 0
+
+
+    def update_pose(self):
+        try:
+            # map→base_linkの変換を取得
+            trans = self.tf_buffer.lookup_transform('odom', 'base_footprint', rclpy.time.Time())
+            # trans = self.tf_buffer.lookup_transform('odom', 'base_footprint', rclpy.time.Time())
+            # self.get_logger().info(f"{trans=}")
+            self.x = trans.transform.translation.x
+            self.y = trans.transform.translation.y
+            q = trans.transform.rotation
+            (_, _, self.rz) = euler_from_quaternion([q.x, q.y, q.z, q.w])
+            # self.get_logger().info(f"x={self.x:.2f}, y={self.y:.2f}, rz={self.rz:.2f} rad")
+        except Exception as e:
+            self.get_logger().warn(str(e))
 
     def move(self, pose):
         twist = Twist()
@@ -97,42 +137,52 @@ class Controller(Node):
 
         distance = ( (pose.position.x-self.x)**2 + (pose.position.y-self.y)**2 ) ** 0.5
 
+        is_reached = False
+
+        dx = x-self.x
+        dy = y-self.y
+        norms = math.sqrt(dx**2 + dy**2)
+        dot = math.cos(self.rz) * dx + math.sin(self.rz) * dy
+        cos_angle = dot / norms
+
+        is_directed = cos_angle > 0.95
+        cross = math.cos(self.rz) * dy - math.sin(self.rz) * dx
+
+        linear_speed = abs(distance * 3.0)
+        linear_speed = max(0.1, min(linear_speed, 0.5))
+        rotation_speed = abs(3.0 * (1.0-abs(cos_angle)))
+        rotation_speed = max(0.0, min(rotation_speed, 0.4))
+
         close_threshold = 0.1
         if distance < close_threshold:
-            if abs(rz-self.rz) < 5 * 3.14 / 180.0:
+            if abs(rz-self.rz) * 180 / 3.1415 < 5.0:
             # if abs(rz-self.rz) < 5 * 3.14 / 180.0:
-                pass
+                is_reached = True
             else:
-                twist.angular.z = 0.1
+                twist.angular.z = rotation_speed
         else:
             # A*B = |A| x |B| x cos(angleAB)
             # is_directed = abs(rz-self.rz) < 5 * 3.14 / 180.0
-            dx = x-self.x
-            dy = y-self.y
-            norms = math.sqrt(dx**2 + dy**2)
 
-            dot = math.cos(self.rz) * dx + math.sin(self.rz) * dy
-            cos_angle = dot / norms
-            is_directed = cos_angle > 0.9
-
-            cross = math.cos(self.rz) * dy - math.sin(self.rz) * dx
 
             # is_directed = (math.cos(self.rz)*() + math.sin(self.rz)*(y-self.y)) / (abs(x-self.x)*abs(y-self.y)) > 0.99  # and math.cos(self.rz)*(x-self.x)/abs(x-self.x) > 0
-            self.get_logger().info(f"{x=} {self.x=} {y=} {self.y=} {rz=} {self.rz=} {cross=}")
+            # self.get_logger().info(f"{cos_angle=}")
+            # self.get_logger().info(f"{x=} {self.x=} {y=} {self.y=} {rz=} {self.rz=} {cross=} {cos_angle=}")
             # self.get_logger().info(f"{(math.cos(self.rz)*(x-self.x) + math.sin(self.rz)*(y-self.y)) / (abs(x-self.x)*abs(y-self.y))=}")
 
             # rotate
             if is_directed:
-                twist.linear.x = 0.1
+                twist.linear.x = linear_speed
             if cross > 0.0:
-                twist.angular.z = 1.0 * (1.1-abs(cos_angle))
+                twist.angular.z =  rotation_speed
             else:
-                twist.angular.z = -1.0 * (1.1-abs(cos_angle))
+                twist.angular.z = -rotation_speed
 
-        self.get_logger().info(f"{distance=} {rz=} {self.rz=}")
-        self.get_logger().info(f"{pose=}")
-        self.get_logger().info(f"{twist=}")
+        # self.get_logger().info(f"{distance=} {rz=} {self.rz=}")
+        # self.get_logger().info(f"{pose=}")
+        # self.get_logger().info(f"{twist=}") 
         self.cmd_pub.publish(twist)
+        return is_reached
 
 def main(args=None):
     rclpy.init(args=args)
@@ -140,7 +190,6 @@ def main(args=None):
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
