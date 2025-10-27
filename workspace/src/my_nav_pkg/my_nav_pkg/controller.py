@@ -45,7 +45,9 @@ class Controller(Node):
 
         self.command_queue = []
         self.prev_path_index = -1
-        self.next_path_index = -1
+        self.next_path_index = 0
+
+        self.Ki = 1.0
 
     def spin_once(self):
         self.update_pose()
@@ -158,8 +160,15 @@ class Controller(Node):
             if abs(rz-self.rz) * 180 / 3.1415 < 5.0:
             # if abs(rz-self.rz) < 5 * 3.14 / 180.0:
                 is_reached = True
+                self.Ki = 1.0
             else:
-                twist.angular.z = rotation_speed
+                # rotation_speed = 0.2
+                self.Ki *= 1.01
+                rotation_speed *= self.Ki
+                if cross > 0.0:
+                    twist.angular.z =  rotation_speed
+                else:
+                    twist.angular.z = -rotation_speed
         else:
             # A*B = |A| x |B| x cos(angleAB)
             # is_directed = abs(rz-self.rz) < 5 * 3.14 / 180.0
@@ -173,11 +182,13 @@ class Controller(Node):
             # rotate
             if is_directed:
                 twist.linear.x = linear_speed
+                rotation_speed *= 1.5
             if cross > 0.0:
                 twist.angular.z =  rotation_speed
             else:
                 twist.angular.z = -rotation_speed
 
+        self.get_logger().info(f"{abs(rz-self.rz) * 180 / 3.1415=} {distance=} {rotation_speed=}")
         # self.get_logger().info(f"{distance=} {rz=} {self.rz=}")
         # self.get_logger().info(f"{pose=}")
         # self.get_logger().info(f"{twist=}") 

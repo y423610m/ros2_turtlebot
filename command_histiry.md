@@ -30,6 +30,13 @@ ros2 run my_nav_pkg straight_avoid.py
 ros2 run my_nav_pkg planner.py
 ros2 run my_nav_pkg controller.py
 
+#
+ros2 launch my_turtlebot_spawner spawn_waffle.launch.py
+ros2 run my_nav_pkg bt_navigator.py
+ros2 run my_nav_pkg controller.py
+ros2 run my_nav_pkg planner.py
+
+
 # control from kbd
 ros2 run turtlebot3_teleop teleop_keyboard
 

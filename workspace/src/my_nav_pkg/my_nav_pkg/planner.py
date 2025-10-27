@@ -48,6 +48,7 @@ class Planner(Node):
             print("reverse")
         else:
             print("true")
+        path.poses.append(goal)
 
         response.path = path
 
