@@ -165,6 +165,7 @@ class Controller(Node):
                 # rotation_speed = 0.2
                 self.Ki *= 1.01
                 rotation_speed *= self.Ki
+                rotation_speed = min(rotation_speed, 10.0)
                 if cross > 0.0:
                     twist.angular.z =  rotation_speed
                 else:

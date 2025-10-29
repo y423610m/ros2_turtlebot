@@ -8,6 +8,8 @@ from builtin_interfaces.msg import Time
 from my_nav_interfaces.srv import PlanPath
 import random
 
+from planner_utils import create_path_zigzag, create_path_linear, create_path_a
+
 class Planner(Node):
     def __init__(self):
         super().__init__("planner")
@@ -27,28 +29,13 @@ class Planner(Node):
         self.get_logger().info("Path planner started.")
 
     def handle_plan_path(self, request, response):
-        start = request.start
-        goal = request.goal
+        self.get_logger().info(f"Got plan request {request=} {response=}")
 
-        path = Path()
+        # path = create_path_zigzag(request.start, request.goal)
+        path = create_path_linear(request.start, request.goal, self.get_logger())
+
         path.header.frame_id = "odom"
         path.header.stamp = self.get_clock().now().to_msg()
-
-        # Create a simple line path (x=0→4)
-        for i in range(5):
-            pose = PoseStamped()
-            pose.header = path.header
-            pose.pose.position.x = float(i)
-            pose.pose.position.y = 1.0 * (i%2)
-            pose.pose.orientation.w = 1.0
-            path.poses.append(pose)
-        
-        if random.randint(0,1) % 2 == 0:
-            path.poses.reverse()
-            print("reverse")
-        else:
-            print("true")
-        path.poses.append(goal)
 
         response.path = path
 

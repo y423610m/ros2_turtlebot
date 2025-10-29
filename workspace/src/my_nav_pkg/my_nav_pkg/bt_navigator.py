@@ -63,8 +63,8 @@ class BehaviorTreeNavigator(Node):
         # start and goal poses
         start = PoseStamped()
         start.header.frame_id = 'odom'
-        start.pose.position.x = 0.0
-        start.pose.position.y = 0.0
+        start.pose.position.x = self.x
+        start.pose.position.y = self.y
         start.pose.orientation.w = 1.0
 
         # goal = PoseStamped()
@@ -94,6 +94,10 @@ class BehaviorTreeNavigator(Node):
 
             request = FollowPath.Request()
             request.path = res.path
+
+            self.x = request.path.poses[-1].pose.position.x
+            self.y = request.path.poses[-1].pose.position.y
+
             self.follow_path_future = self.follow_path_client.call_async(request)
             self.follow_path_future.add_done_callback(self.on_follow_path_response)
         except Exception as e:
